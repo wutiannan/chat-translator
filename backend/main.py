@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket, WebSocketDisconnect, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from PIL import Image
@@ -35,18 +35,43 @@ active_connections: Dict[str, WebSocket] = {}
 class TextAnalysisRequest(BaseModel):
     text: str
     role: str = "elder"  # 新增角色字段，默认为老人
+    context: List[str] = []  # 新增上下文字段
 
 class TextAnalyzer:
     def __init__(self):
         self.api_key = os.getenv("DASHSCOPE_API_KEY")
         self.model = "qwen-max"
     
-    async def analyze_text(self, text: str, role: str = "elder") -> str:
+    async def analyze_text(self, text: str, role: str = "elder", context: List[str] = None) -> str:
         try:
+            context_str = "\n".join([f"上下文消息 {i+1}: {msg}" for i, msg in enumerate(context or [])])
+            
             if role == "elder":
-                prompt = f"请用简单易懂的方式解释以下年轻人说的话：\n\n{text}\n\n要求：\n1. 解释含义(10字内)\n2. 智能转换👴(15字内)\n3. 原因(10字内)"
+                prompt = f"""请结合以下聊天上下文，用简单易懂的方式解释年轻人说的话：
+                
+                聊天上下文:
+                {context_str}
+                
+                需要解释的话:
+                {text}
+                
+                要求：
+                1. 解释含义(10字内)
+                2. 智能转换👴(15字内)
+                3. 原因(10字内)"""
             else:
-                prompt = f"请用年轻人易懂的方式解释以下老人说的话：\n\n{text}\n\n要求：\n1. 解释含义(10字内)\n2. 智能转换👱(15字内)\n3. 原因(10字内)"
+                prompt = f"""请结合以下聊天上下文，用年轻人易懂的方式解释老人说的话：
+                
+                聊天上下文:
+                {context_str}
+                
+                需要解释的话:
+                {text}
+                
+                要求：
+                1. 解释含义(10字内)
+                2. 智能转换👱(15字内)
+                3. 原因(10字内)"""
             
             response = Generation.call(
                 model=self.model,
@@ -69,28 +94,35 @@ class ImageAnalyzer:
         self.api_key = os.getenv("DASHSCOPE_API_KEY")
         self.model = "qwen-vl-plus"
     
-    async def analyze_image(self, image_base64: str, role: str = "elder") -> str:
-        """调用通义千问多模态模型分析图片"""
+    async def analyze_image(self, image_base64: str, role: str = "elder", context: List[str] = None) -> str:
+        context_str = "\n".join([f"上下文消息 {i+1}: {msg}" for i, msg in enumerate(context or [])])
+        
         if role == "elder":
-            prompt = """
-                请用老年人易懂的方式解释这个表情包，包含:
-                1. 表情含义(10字内)
-                2. 适合长辈的说法(10字内)
-
-                格式:
-                含义→说法
-                原因:...
-            """
+            prompt = f"""请结合以下聊天上下文，用老年人易懂的方式解释这个表情包：
+            
+            聊天上下文:
+            {context_str}
+            
+            表情包分析要求:
+            1. 表情含义(10字内)
+            2. 适合长辈的说法(10字内)
+            
+            格式:
+            含义→说法
+            原因:..."""
         else:
-            prompt = """
-                请用年轻人易懂的方式解释这个表情包，包含:
-                1. 表情含义(10字内)
-                2. 适合年轻人的说法(10字内)
-
-                格式:
-                含义→说法
-                原因:...
-            """
+            prompt = f"""请结合以下聊天上下文，用年轻人易懂的方式解释这个表情包：
+            
+            聊天上下文:
+            {context_str}
+            
+            表情包分析要求:
+            1. 表情含义(10字内)
+            2. 适合年轻人的说法(10字内)
+            
+            格式:
+            含义→说法
+            原因:..."""
         
         messages = [
             {
@@ -143,9 +175,9 @@ async def analyze_text_api(request: TextAnalysisRequest):
         if not request.text.strip():
             raise ValueError("文本内容不能为空")
             
-        logger.info(f"收到文本分析请求: {request.text[:30]}... (角色: {request.role})")
+        logger.info(f"收到文本分析请求: {request.text[:30]}... (角色: {request.role}, 上下文长度: {len(request.context)})")
         analyzer = TextAnalyzer()
-        result = await analyzer.analyze_text(request.text, request.role)
+        result = await analyzer.analyze_text(request.text, request.role, request.context)
         return {"status": "success", "analysis": result}
     except ValueError as ve:
         logger.error(f"文本分析参数错误: {str(ve)}")
@@ -156,9 +188,9 @@ async def analyze_text_api(request: TextAnalysisRequest):
 
 # 图片分析接口 - 增强错误处理
 @app.post("/api/analyze_image")
-async def analyze_image_api(image: UploadFile = File(...)):
+async def analyze_image_api(image: UploadFile = File(...), role: str = Form(...), context: List[str] = Form(...)):
     try:
-        logger.info(f"收到图片分析请求: {image.filename}, 大小: {image.size} 字节")
+        logger.info(f"收到图片分析请求: {image.filename}, 大小: {image.size} 字节, 上下文长度: {len(context)}")
         
         # 直接使用FastAPI的UploadFile对象
         contents = await image.read()
@@ -176,8 +208,7 @@ async def analyze_image_api(image: UploadFile = File(...)):
         image_base64 = f"data:{image.content_type};base64," + base64.b64encode(contents).decode('utf-8')
         
         analyzer = ImageAnalyzer()
-        result = await analyzer.analyze_image(image_base64)
-        
+        result = await analyzer.analyze_image(image_base64, role, context)
         return {"status": "success", "analysis": result}
     except ValueError as ve:
         logger.error(f"图片分析参数错误: {str(ve)}")

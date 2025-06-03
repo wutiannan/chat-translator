@@ -144,10 +144,20 @@ function App() {
     ));
     
     try {
+      // 获取最近5条消息作为上下文
+      const context = messages
+        .slice(-5)
+        .filter(m => m.id !== msg.id)
+        .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
+      
       const response = await fetch('/api/analyze_text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: msg.message })
+        body: JSON.stringify({ 
+          text: msg.message,
+          role: clientId === 'elder' ? 'young' : 'elder',
+          context
+        })
       });
       
       if (!response.ok) {
@@ -188,9 +198,16 @@ function App() {
     ));
     
     try {
+      // 获取最近5条消息作为上下文
+      const context = messages
+        .slice(-5)
+        .filter(m => m.id !== msg.id)
+        .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
+      
       const formData = new FormData();
       formData.append('image', msg.image_blob);
       formData.append('role', clientId === 'elder' ? 'young' : 'elder');  // 添加角色参数
+      formData.append('context', JSON.stringify(context));
       
       const response = await fetch('/api/analyze_image', {
         method: 'POST',
