@@ -34,18 +34,23 @@ active_connections: Dict[str, WebSocket] = {}
 # 文本分析请求模型
 class TextAnalysisRequest(BaseModel):
     text: str
+    role: str = "elder"  # 新增角色字段，默认为老人
 
-# 文本分析模型
 class TextAnalyzer:
     def __init__(self):
         self.api_key = os.getenv("DASHSCOPE_API_KEY")
         self.model = "qwen-max"
     
-    async def analyze_text(self, text: str) -> str:
+    async def analyze_text(self, text: str, role: str = "elder") -> str:
         try:
+            if role == "elder":
+                prompt = f"请用简单易懂的方式解释以下年轻人说的话：\n\n{text}\n\n要求：\n1. 解释含义(10字内)\n2. 智能转换👴(15字内)\n3. 原因(10字内)"
+            else:
+                prompt = f"请用年轻人易懂的方式解释以下老人说的话：\n\n{text}\n\n要求：\n1. 解释含义(10字内)\n2. 智能转换👱(15字内)\n3. 原因(10字内)"
+            
             response = Generation.call(
                 model=self.model,
-                prompt=f"请分析以下文本的含义和情感倾向：\n\n{text}\n\n请用简洁的语言总结。",
+                prompt=prompt,
                 api_key=self.api_key
             )
             
@@ -59,29 +64,40 @@ class TextAnalyzer:
             logger.error(f"调用文本分析模型出错: {str(e)}")
             raise
 
-# 图片分析模型
 class ImageAnalyzer:
     def __init__(self):
         self.api_key = os.getenv("DASHSCOPE_API_KEY")
         self.model = "qwen-vl-plus"
     
-    async def analyze_image(self, image_base64: str) -> str:
+    async def analyze_image(self, image_base64: str, role: str = "elder") -> str:
         """调用通义千问多模态模型分析图片"""
+        if role == "elder":
+            prompt = """
+                请用老年人易懂的方式解释这个表情包，包含:
+                1. 表情含义(10字内)
+                2. 适合长辈的说法(10字内)
+
+                格式:
+                含义→说法
+                原因:...
+            """
+        else:
+            prompt = """
+                请用年轻人易懂的方式解释这个表情包，包含:
+                1. 表情含义(10字内)
+                2. 适合年轻人的说法(10字内)
+
+                格式:
+                含义→说法
+                原因:...
+            """
+        
         messages = [
             {
                 "role": "user",
                 "content": [
-                    {"image": image_base64},  # 直接使用Base64数据
-                    {"text": """
-                        请用老年人易懂的方式解释这个表情包，包含:
-                        1. 表情含义(10字内)
-                        2. 适合长辈的说法(10字内)
-                        3. 简短原因(15字内)
-
-                        格式:
-                        含义→说法
-                        原因:...
-                    """}
+                    {"image": image_base64},
+                    {"text": prompt}
                 ]
             }
         ]
@@ -119,6 +135,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         del active_connections[client_id]
         logger.info(f"用户 {client_id} 已断开")
 
+
 # 文本分析接口
 @app.post("/api/analyze_text")
 async def analyze_text_api(request: TextAnalysisRequest):
@@ -126,9 +143,9 @@ async def analyze_text_api(request: TextAnalysisRequest):
         if not request.text.strip():
             raise ValueError("文本内容不能为空")
             
-        logger.info(f"收到文本分析请求: {request.text[:30]}...")
+        logger.info(f"收到文本分析请求: {request.text[:30]}... (角色: {request.role})")
         analyzer = TextAnalyzer()
-        result = await analyzer.analyze_text(request.text)
+        result = await analyzer.analyze_text(request.text, request.role)
         return {"status": "success", "analysis": result}
     except ValueError as ve:
         logger.error(f"文本分析参数错误: {str(ve)}")

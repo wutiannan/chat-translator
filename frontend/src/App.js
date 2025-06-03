@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [clientId, setClientId] = useState('user1');
-  const [otherClientId, setOtherClientId] = useState('user2');
+  const [clientId, setClientId] = useState('elder');  // 默认设为长辈
+  const [otherClientId, setOtherClientId] = useState('young'); // 默认设为年轻人
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
@@ -37,6 +37,10 @@ function App() {
       if (!data.from) {
         data.from = 'unknown';
       }
+      // 添加role字段设置
+      if (!data.role) {
+        data.role = data.from === 'elder' ? 'elder' : 'young';
+      }
       setMessages(prev => [...prev, data]);
     };
     ws.onclose = () => console.log('WebSocket closed');
@@ -53,6 +57,7 @@ function App() {
         type: "text",
         message: message,
         from: clientId,
+        role: clientId, // 确保使用当前用户角色
         id: Date.now()
       };
       socket.send(JSON.stringify(newMessage));
@@ -97,6 +102,7 @@ function App() {
           image_data: imageUrl,    // 临时URL用于显示
           image_blob: file,        // 存储原始Blob用于分析
           from: clientId,
+          role: clientId === 'user1' ? 'elder' : 'young', // 添加角色参数
           id: `${clientId}_${Date.now()}`
         };
         
@@ -172,25 +178,24 @@ function App() {
   };
 
   // 图片分析
-const analyzeImageMessage = async (msg) => {
-    // 移除msg.analysis检查，保留analysisInProgress检查
+  const analyzeImageMessage = async (msg) => {
     if (analysisInProgress) return;
     
     setAnalysisInProgress(true);
     
-    // 清除之前的分析结果
     setMessages(prev => prev.map(m => 
-        m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
+      m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
     ));
     
     try {
-        const formData = new FormData();
-        formData.append('image', msg.image_blob);
-        
-        const response = await fetch('/api/analyze_image', {
-            method: 'POST',
-            body: formData,
-        });
+      const formData = new FormData();
+      formData.append('image', msg.image_blob);
+      formData.append('role', clientId === 'elder' ? 'young' : 'elder');  // 添加角色参数
+      
+      const response = await fetch('/api/analyze_image', {
+        method: 'POST',
+        body: formData,
+      });
         
         if (!response.ok) {
             const errorData = await response.json();
@@ -237,10 +242,11 @@ const analyzeImageMessage = async (msg) => {
         <select onChange={(e) => {
           const newClientId = e.target.value;
           setClientId(newClientId);
-          setOtherClientId(newClientId === 'user1' ? 'user2' : 'user1');
+          // 修复：根据新选择的用户ID动态设置对方ID
+          setOtherClientId(newClientId === 'elder' ? 'young' : 'elder');
         }} value={clientId}>
-          <option value="user1">用户1</option>
-          <option value="user2">用户2</option>
+          <option value="elder">长辈👴</option>
+          <option value="young">年轻人👱</option>
         </select>
       </div>
       
@@ -248,7 +254,9 @@ const analyzeImageMessage = async (msg) => {
         <div className="messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message ${msg.from === clientId ? 'sent' : 'received'}`}>
-              <div className="sender">{msg.from === clientId ? '你' : msg.from}</div>
+              <div className="sender">
+                {msg.from === clientId ? '你' : (msg.role === 'elder' ? '长辈👴' : '年轻人👱')}
+              </div>
               
               {msg.type === "text" && (
                 <div className="content text-content">{msg.message}</div>
