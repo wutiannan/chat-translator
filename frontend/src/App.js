@@ -265,7 +265,15 @@ function App() {
               {msg.type === "image" && (
                 <div className="content image-content">
                   {uploading && msg.id === Date.now() && <div className="uploading">上传中...</div>}
-                  <img src={msg.image_data} alt="发送的图片" style={{ maxWidth: '100%' }} />
+                  <img 
+                    src={msg.image_data} 
+                    alt="发送的图片" 
+                    style={{ 
+                      maxWidth: '200px',
+                      maxHeight: '200px',
+                      objectFit: 'contain'
+                    }}
+                  />
                 </div>
               )}
               

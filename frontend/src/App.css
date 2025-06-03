@@ -229,4 +229,25 @@ body {
 
 .analysis-error {
   color: #FF3B30;
-}    
+}
+
+.image-content img {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+/* .image-content img:hover {
+  transform: scale(1.02);
+} */
+
+.image-content img {
+  objectFit: 'contain';
+  max-width: 300px;
+  max-height: 300px;
+  cursor: 'pointer';
+}
+
+/* .image-content img:click {
+  window.open(this.src, '_blank');
+} */
