@@ -218,6 +218,34 @@ async def analyze_image_api(image: UploadFile = File(...), role: str = Form(...)
         logger.error(f"图片分析错误: {str(e)}")
         raise HTTPException(status_code=500, detail=f"服务器处理图片时出错: {str(e)}")
 
+class EmojiAnalysisRequest(BaseModel):
+    image_url: str
+    role: str = "elder"
+    context: List[str] = []
+
+@app.post("/api/analyze_emoji")
+async def analyze_emoji_api(request: EmojiAnalysisRequest):
+    try:
+        if not request.image_url.strip():
+            raise ValueError("表情包URL不能为空")
+            
+        logger.info(f"收到网络表情包分析请求: {request.image_url[:50]}... (角色: {request.role}, 上下文长度: {len(request.context)})")
+        
+        # 验证URL格式
+        if not request.image_url.startswith(('http://', 'https://')):
+            raise ValueError("URL必须以http://或https://开头")
+            
+        analyzer = ImageAnalyzer()
+        result = await analyzer.analyze_image(request.image_url, request.role, request.context)
+        return {"status": "success", "analysis": result}
+        
+    except ValueError as ve:
+        logger.error(f"表情包分析参数错误: {str(ve)}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"表情包分析错误: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}

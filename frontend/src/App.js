@@ -15,34 +15,34 @@ function App() {
   // 新增：获取表情包函数
   const fetchEmojiPackages = async () => {
     if (!message.trim()) return;
-    
+
     try {
-        const response = await fetch('/api/search_emojis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                text: message,
-                limit: 5
-            })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            setEmojiPackages(data.emojis);
-            setShowEmojiPanel(true);
-        }
+      const response = await fetch('/api/search_emojis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: message,
+          limit: 5
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setEmojiPackages(data.emojis);
+        setShowEmojiPanel(true);
+      }
     } catch (error) {
-        console.error('获取表情包失败:', error);
-        alert('获取表情包失败，请重试');
+      console.error('获取表情包失败:', error);
+      alert('获取表情包失败，请重试');
     }
-};
+  };
 
   // 新增：发送表情包消息
   const sendEmoji = (emojiUrl) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       const newMessage = {
         to: otherClientId,
-        type: "image",
+        type: "emoji",
         image_data: emojiUrl,
         from: clientId,
         role: clientId,
@@ -113,30 +113,30 @@ function App() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     // 检查文件类型
     if (!file.type.startsWith('image/')) {
       alert('请选择图片文件');
       return;
     }
-    
+
     // 检查文件大小（可选）
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       alert(`图片大小超过限制（${(maxSize / 1024 / 1024).toFixed(1)}MB）`);
       return;
     }
-    
+
     setUploading(true);
-    
+
     // 创建临时URL显示图片
     const imageUrl = URL.createObjectURL(file);
-    
+
     // 创建图片预览对象
     const imagePreview = new Image();
     imagePreview.onload = () => {
       console.log(`图片预览加载成功: ${imagePreview.width}x${imagePreview.height}`);
-      
+
       // 发送消息（包含原始Blob和临时URL）
       if (socket && socket.readyState === WebSocket.OPEN) {
         const newMessage = {
@@ -148,73 +148,73 @@ function App() {
           role: clientId === 'user1' ? 'elder' : 'young', // 添加角色参数
           id: `${clientId}_${Date.now()}`
         };
-        
+
         // 注意：不能直接通过WebSocket发送Blob对象
         socket.send(JSON.stringify({
           ...newMessage,
           image_blob: undefined    // 不通过WebSocket发送Blob
         }));
-        
+
         setMessages(prev => [...prev, newMessage]);
         setUploading(false);
       }
     };
-    
+
     imagePreview.onerror = (err) => {
       console.error('图片预览加载失败:', err);
       alert('图片加载失败，请尝试其他图片');
       setUploading(false);
     };
-    
+
     imagePreview.src = imageUrl;
   };
 
   // 文本分析
   const analyzeTextMessage = async (msg) => {
     if (msg.analysis || analysisInProgress) return;
-    
+
     // 检查文本是否为空
     if (!msg.message.trim()) {
       alert("请选择非空的文本消息进行分析");
       return;
     }
-    
+
     setAnalysisInProgress(true);
-    
+
     // 更新状态为分析中
-    setMessages(prev => prev.map(m => 
+    setMessages(prev => prev.map(m =>
       m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
     ));
-    
+
     try {
       // 获取最近5条消息作为上下文
       const context = messages
         .slice(-5)
         .filter(m => m.id !== msg.id)
         .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
-      
+
       const response = await fetch('/api/analyze_text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: msg.message,
           role: clientId === 'elder' ? 'young' : 'elder',
           context
         })
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.status === "success") {
-        setMessages(prev => prev.map(m => 
+        setMessages(prev => prev.map(m =>
           m.id === msg.id ? { ...m, analysis: { 
-            type: "analysis_result", 
-            content: result.analysis 
+              type: "analysis_result",
+              content: result.analysis
           } } : m
         ));
       } else {
@@ -222,7 +222,7 @@ function App() {
       }
     } catch (error) {
       console.error('文本分析失败:', error);
-      setMessages(prev => prev.map(m => 
+      setMessages(prev => prev.map(m =>
         m.id === msg.id ? { ...m, analysis: { type: "error", error: error.message } } : m
       ));
     } finally {
@@ -233,59 +233,122 @@ function App() {
   // 图片分析
   const analyzeImageMessage = async (msg) => {
     if (analysisInProgress) return;
-    
+
     setAnalysisInProgress(true);
-    
-    setMessages(prev => prev.map(m => 
+
+    setMessages(prev => prev.map(m =>
       m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
     ));
-    
+
     try {
       // 获取最近5条消息作为上下文
       const context = messages
         .slice(-5)
         .filter(m => m.id !== msg.id)
         .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
-      
+
       const formData = new FormData();
       formData.append('image', msg.image_blob);
       formData.append('role', clientId === 'elder' ? 'young' : 'elder');  // 添加角色参数
       formData.append('context', JSON.stringify(context));
-      
+
       const response = await fetch('/api/analyze_image', {
         method: 'POST',
         body: formData,
       });
-        
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        setMessages(prev => prev.map(m =>
+          m.id === msg.id ? {
+            ...m,
+            analysis: {
+              type: "analysis_result",
+              content: result.analysis
+            }
+          } : m
+        ));
+      } else {
+        throw new Error(result.message || "分析失败");
+      }
+    } catch (error) {
+      console.error('图片分析失败:', error);
+      setMessages(prev => prev.map(m =>
+        m.id === msg.id ? {
+          ...m,
+          analysis: {
+            type: "error",
+            error: error.message
+          }
+        } : m
+      ));
+    } finally {
+      setAnalysisInProgress(false);
+    }
+  };
+
+  // 网络表情包分析
+  const analyzeEmojiMessage = async (msg) => {
+    if (analysisInProgress) return;
+
+    setAnalysisInProgress(true);
+
+    setMessages(prev => prev.map(m =>
+        m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
+    ));
+
+    try {
+        // 获取最近5条消息作为上下文
+        const context = messages
+            .slice(-5)
+            .filter(m => m.id !== msg.id)
+            .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
+
+        const response = await fetch('/api/analyze_emoji', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                image_url: msg.image_data,
+                role: clientId === 'elder' ? 'young' : 'elder',
+                context
+            })
+        });
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
-        
+
         if (result.status === "success") {
-            setMessages(prev => prev.map(m => 
-                m.id === msg.id ? { 
-                    ...m, 
-                    analysis: { 
-                        type: "analysis_result", 
-                        content: result.analysis 
-                    } 
+            setMessages(prev => prev.map(m =>
+                m.id === msg.id ? {
+                    ...m,
+                    analysis: {
+                        type: "analysis_result",
+                        content: result.analysis
+                    }
                 } : m
             ));
         } else {
             throw new Error(result.message || "分析失败");
         }
     } catch (error) {
-        console.error('图片分析失败:', error);
-        setMessages(prev => prev.map(m => 
-            m.id === msg.id ? { 
-                ...m, 
-                analysis: { 
-                    type: "error", 
-                    error: error.message 
-                } 
+        console.error('表情包分析失败:', error);
+        setMessages(prev => prev.map(m =>
+            m.id === msg.id ? {
+                ...m,
+                analysis: {
+                    type: "error",
+                    error: error.message
+                }
             } : m
         ));
     } finally {
@@ -296,7 +359,7 @@ function App() {
   return (
     <div className="App">
       <h1 className="app-title">智能聊天助手</h1>
-      
+
       <div className="user-selector">
         <label>选择用户: </label>
         <select onChange={(e) => {
@@ -309,7 +372,7 @@ function App() {
           <option value="young">年轻人👱</option>
         </select>
       </div>
-      
+
       <div className="chat-container">
         <div className="messages">
           {messages.map((msg) => (
@@ -317,18 +380,18 @@ function App() {
               <div className="sender">
                 {msg.from === clientId ? '你' : (msg.role === 'elder' ? '长辈👴' : '年轻人👱')}
               </div>
-              
+
               {msg.type === "text" && (
                 <div className="content text-content">{msg.message}</div>
               )}
-              
+
               {msg.type === "image" && (
                 <div className="content image-content">
                   {uploading && msg.id === Date.now() && <div className="uploading">上传中...</div>}
-                  <img 
-                    src={msg.image_data} 
-                    alt="发送的图片" 
-                    style={{ 
+                  <img
+                    src={msg.image_data}
+                    alt="发送的图片"
+                    style={{
                       maxWidth: '200px',
                       maxHeight: '200px',
                       objectFit: 'contain'
@@ -336,38 +399,64 @@ function App() {
                   />
                 </div>
               )}
-              
+
+              {msg.type === "emoji" && (
+                <div className="content image-content">
+                  <img
+                    src={msg.image_data}
+                    alt="网络表情包"
+                    style={{
+                      maxWidth: '200px',
+                      maxHeight: '200px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+              )}
+
               {/* 只对接收的消息显示分析按钮 */}
               {msg.from !== clientId && (
                 <div className="analysis-buttons">
                   {msg.type === "text" && (
-                    <button 
+                    <button
                       className="analysis-button"
                       onClick={() => analyzeTextMessage(msg)}
                       disabled={msg.analysis && msg.analysis.type === "pending"}
                     >
-                      {msg.analysis ? 
-                        (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') : 
+                      {msg.analysis ?
+                        (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
                         '📝分析文本'
                       }
                     </button>
                   )}
-                  
+
                   {msg.type === "image" && (
-                    <button 
+                    <button
                       className="analysis-button"
                       onClick={() => analyzeImageMessage(msg)}
                       disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
                     >
-                      {msg.analysis ? 
-                        (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') : 
+                      {msg.analysis ?
+                        (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
                         '📷分析图片'
+                      }
+                    </button>
+                  )}
+                  {msg.type === "emoji" && (
+                    <button
+                      className="analysis-button"
+                      onClick={() => analyzeEmojiMessage(msg)}
+                      disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
+                    >
+                      {msg.analysis ?
+                        (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
+                        '🙂分析表情包'
                       }
                     </button>
                   )}
                 </div>
               )}
-              
+
               {msg.from !== clientId && msg.analysis && (
                 <div className="analysis-result">
                   <div className="analysis-header">
@@ -389,7 +478,7 @@ function App() {
             </div>
           ))}
         </div>
-        
+
         <div className="input-area">
           <input
             type="text"
@@ -407,8 +496,8 @@ function App() {
           <button onClick={sendMessage} className="send-button">
             发送
           </button>
-          <button 
-            onClick={fetchEmojiPackages} 
+          <button
+            onClick={fetchEmojiPackages}
             className="emoji-button"
             disabled={!message.trim()}
           >
@@ -424,13 +513,13 @@ function App() {
           <label htmlFor="fileInput" className="file-upload-button">
             📷
           </label>
-          
+
           {showEmojiPanel && (
             <div className="emoji-panel">
               {emojiPackages.map((emoji, index) => (
-                <img 
+                <img
                   key={index}
-                  src={emoji} 
+                  src={emoji}
                   alt="表情包"
                   onClick={() => sendEmoji(emoji)}
                   className="emoji-item"
