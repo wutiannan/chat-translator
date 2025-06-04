@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [clientId, setClientId] = useState('elder');  // 默认设为长辈
-  const [otherClientId, setOtherClientId] = useState('young'); // 默认设为年轻人
+  // 从URL参数获取初始角色
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialRole = urlParams.get('role') || 'elder'; // 默认为长辈视图
+  
+  const [clientId, setClientId] = useState(initialRole);
+  const [otherClientId, setOtherClientId] = useState(initialRole === 'elder' ? 'young' : 'elder');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
@@ -365,8 +369,12 @@ function App() {
         <select onChange={(e) => {
           const newClientId = e.target.value;
           setClientId(newClientId);
-          // 修复：根据新选择的用户ID动态设置对方ID
           setOtherClientId(newClientId === 'elder' ? 'young' : 'elder');
+          
+          // 更新URL参数但不刷新页面
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.set('role', newClientId);
+          window.history.pushState({}, '', newUrl);
         }} value={clientId}>
           <option value="elder">长辈👴</option>
           <option value="young">年轻人👱</option>
