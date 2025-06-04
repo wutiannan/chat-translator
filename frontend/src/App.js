@@ -9,7 +9,50 @@ function App() {
   const [socket, setSocket] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [analysisInProgress, setAnalysisInProgress] = useState(false);
+  const [emojiPackages, setEmojiPackages] = useState([]); // 新增：存储表情包
+  const [showEmojiPanel, setShowEmojiPanel] = useState(false); // 新增：控制表情面板显示
 
+  // 新增：获取表情包函数
+  const fetchEmojiPackages = async () => {
+    if (!message.trim()) return;
+    
+    try {
+        const response = await fetch('/api/search_emojis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                text: message,
+                limit: 5
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            setEmojiPackages(data.emojis);
+            setShowEmojiPanel(true);
+        }
+    } catch (error) {
+        console.error('获取表情包失败:', error);
+        alert('获取表情包失败，请重试');
+    }
+};
+
+  // 新增：发送表情包消息
+  const sendEmoji = (emojiUrl) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      const newMessage = {
+        to: otherClientId,
+        type: "image",
+        image_data: emojiUrl,
+        from: clientId,
+        role: clientId,
+        id: Date.now()
+      };
+      socket.send(JSON.stringify(newMessage));
+      setMessages(prev => [...prev, newMessage]);
+      setShowEmojiPanel(false);
+    }
+  };
   // 从localStorage加载消息历史
   useEffect(() => {
     const storedMessages = localStorage.getItem('messages');
@@ -364,6 +407,13 @@ function App() {
           <button onClick={sendMessage} className="send-button">
             发送
           </button>
+          <button 
+            onClick={fetchEmojiPackages} 
+            className="emoji-button"
+            disabled={!message.trim()}
+          >
+            🔍
+          </button>
           <input
             type="file"
             accept="image/*"
@@ -374,6 +424,20 @@ function App() {
           <label htmlFor="fileInput" className="file-upload-button">
             📷
           </label>
+          
+          {showEmojiPanel && (
+            <div className="emoji-panel">
+              {emojiPackages.map((emoji, index) => (
+                <img 
+                  key={index}
+                  src={emoji} 
+                  alt="表情包"
+                  onClick={() => sendEmoji(emoji)}
+                  className="emoji-item"
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

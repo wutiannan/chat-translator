@@ -10,6 +10,7 @@ import os
 from typing import Dict, List
 from dotenv import load_dotenv
 from dashscope import MultiModalConversation, Generation
+import httpx  
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -220,3 +221,55 @@ async def analyze_image_api(image: UploadFile = File(...), role: str = Form(...)
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+class EmojiSearchRequest(BaseModel):
+    text: str
+    limit: int = 5
+
+@app.post("/api/search_emojis")
+async def search_emojis(request: EmojiSearchRequest):
+    try:
+        if not request.text.strip():
+            raise ValueError("搜索文本不能为空")
+            
+        logger.info(f"收到表情包搜索请求: {request.text}")
+        
+        # 从环境变量获取ID和Key
+        emoji_id = os.getenv("EMOJI_API_ID")
+        emoji_key = os.getenv("EMOJI_API_KEY")
+        
+        if not emoji_id or not emoji_key:
+            raise ValueError("表情包API配置缺失")
+        
+        params = {
+            "id": emoji_id,
+            "key": emoji_key,
+            "words": request.text,
+            "limit": request.limit
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://cn.apihz.cn/api/img/apihzbqbbaidu.php",
+                params=params
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data["code"] == 200:
+                    return {
+                        "status": "success",
+                        "emojis": data["res"][:request.limit]  # 返回指定数量的表情包
+                    }
+                else:
+                    raise ValueError(data.get("msg", "表情包API返回错误"))
+            else:
+                raise ValueError("表情包API请求失败")
+                
+    except ValueError as ve:
+        logger.error(f"表情包搜索参数错误: {str(ve)}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"获取表情包失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
