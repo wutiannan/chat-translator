@@ -202,7 +202,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: msg.message,
-          role: clientId === 'elder' ? 'young' : 'elder',
+          role: clientId === 'elder' ? 'elder' : 'young',
           context
         })
       });
@@ -255,7 +255,7 @@ function App() {
 
       const formData = new FormData();
       formData.append('image', msg.image_blob);
-      formData.append('role', clientId === 'elder' ? 'young' : 'elder');  // 添加角色参数
+      formData.append('role', clientId === 'elder' ? 'elder' : 'young');
       formData.append('context', JSON.stringify(context));
 
       const response = await fetch('/api/analyze_image', {
@@ -321,7 +321,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           image_url: msg.image_data,
-          role: clientId === 'elder' ? 'young' : 'elder',
+          role: clientId === 'elder' ? 'elder' : 'young',
           context
         })
       });
