@@ -5,7 +5,7 @@ function App() {
   // 从URL参数获取初始角色
   const urlParams = new URLSearchParams(window.location.search);
   const initialRole = urlParams.get('role') || 'elder'; // 默认为长辈视图
-  
+
   const [clientId, setClientId] = useState(initialRole);
   const [otherClientId, setOtherClientId] = useState(initialRole === 'elder' ? 'young' : 'elder');
   const [message, setMessage] = useState('');
@@ -72,7 +72,7 @@ function App() {
 
   // WebSocket连接管理
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8000/ws/${clientId}`);
+    const ws = new WebSocket(`ws://8.137.70.68:8000/ws/${clientId}`);
     setSocket(ws);
 
     ws.onopen = () => console.log(`WebSocket connected for ${clientId}`);
@@ -216,10 +216,12 @@ function App() {
 
       if (result.status === "success") {
         setMessages(prev => prev.map(m =>
-          m.id === msg.id ? { ...m, analysis: { 
+          m.id === msg.id ? {
+            ...m, analysis: {
               type: "analysis_result",
               content: result.analysis
-          } } : m
+            }
+          } : m
         ));
       } else {
         throw new Error(result.message || "分析失败");
@@ -304,61 +306,61 @@ function App() {
     setAnalysisInProgress(true);
 
     setMessages(prev => prev.map(m =>
-        m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
+      m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
     ));
 
     try {
-        // 获取最近5条消息作为上下文
-        const context = messages
-            .slice(-5)
-            .filter(m => m.id !== msg.id)
-            .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
+      // 获取最近5条消息作为上下文
+      const context = messages
+        .slice(-5)
+        .filter(m => m.id !== msg.id)
+        .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
 
-        const response = await fetch('/api/analyze_emoji', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                image_url: msg.image_data,
-                role: clientId === 'elder' ? 'young' : 'elder',
-                context
-            })
-        });
+      const response = await fetch('/api/analyze_emoji', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: msg.image_data,
+          role: clientId === 'elder' ? 'young' : 'elder',
+          context
+        })
+      });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (result.status === "success") {
-            setMessages(prev => prev.map(m =>
-                m.id === msg.id ? {
-                    ...m,
-                    analysis: {
-                        type: "analysis_result",
-                        content: result.analysis
-                    }
-                } : m
-            ));
-        } else {
-            throw new Error(result.message || "分析失败");
-        }
-    } catch (error) {
-        console.error('表情包分析失败:', error);
+      if (result.status === "success") {
         setMessages(prev => prev.map(m =>
-            m.id === msg.id ? {
-                ...m,
-                analysis: {
-                    type: "error",
-                    error: error.message
-                }
-            } : m
+          m.id === msg.id ? {
+            ...m,
+            analysis: {
+              type: "analysis_result",
+              content: result.analysis
+            }
+          } : m
         ));
+      } else {
+        throw new Error(result.message || "分析失败");
+      }
+    } catch (error) {
+      console.error('表情包分析失败:', error);
+      setMessages(prev => prev.map(m =>
+        m.id === msg.id ? {
+          ...m,
+          analysis: {
+            type: "error",
+            error: error.message
+          }
+        } : m
+      ));
     } finally {
-        setAnalysisInProgress(false);
+      setAnalysisInProgress(false);
     }
-};
+  };
 
   return (
     <div className="App">
@@ -370,7 +372,7 @@ function App() {
           const newClientId = e.target.value;
           setClientId(newClientId);
           setOtherClientId(newClientId === 'elder' ? 'young' : 'elder');
-          
+
           // 更新URL参数但不刷新页面
           const newUrl = new URL(window.location);
           newUrl.searchParams.set('role', newClientId);

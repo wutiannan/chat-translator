@@ -2,7 +2,8 @@
   "name": "chat-app",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:8000",
+  "proxy": "http://8.137.70.68:8000",
+  "homepage": ".",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
@@ -36,4 +37,4 @@
       "last 1 safari version"
     ]
   }
-}    
+}
