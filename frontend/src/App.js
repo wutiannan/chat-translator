@@ -114,63 +114,63 @@ function App() {
   };
 
   // 处理图片上传
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+        return;
+    }
 
     // 检查文件类型
     if (!file.type.startsWith('image/')) {
-      alert('请选择图片文件');
-      return;
+        alert('请选择图片文件');
+        return;
     }
 
     // 检查文件大小（可选）
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      alert(`图片大小超过限制（${(maxSize / 1024 / 1024).toFixed(1)}MB）`);
-      return;
+        alert(`图片大小超过限制（${(maxSize / 1024 / 1024).toFixed(1)}MB）`);
+        return;
     }
 
     setUploading(true);
 
-    // 创建临时URL显示图片
-    const imageUrl = URL.createObjectURL(file);
+    try {
+        const formData = new FormData();
+        formData.append('image', file);
 
-    // 创建图片预览对象
-    const imagePreview = new Image();
-    imagePreview.onload = () => {
-      console.log(`图片预览加载成功: ${imagePreview.width}x${imagePreview.height}`);
+        const response = await fetch('/api/upload_image', {
+            method: 'POST',
+            body: formData,
+        });
 
-      // 发送消息（包含原始Blob和临时URL）
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        const newMessage = {
-          to: otherClientId,
-          type: "image",
-          image_data: imageUrl,    // 临时URL用于显示
-          image_blob: file,        // 存储原始Blob用于分析
-          from: clientId,
-          role: clientId === 'user1' ? 'elder' : 'young', // 添加角色参数
-          id: `${clientId}_${Date.now()}`
-        };
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
 
-        // 注意：不能直接通过WebSocket发送Blob对象
-        socket.send(JSON.stringify({
-          ...newMessage,
-          image_blob: undefined    // 不通过WebSocket发送Blob
-        }));
+        const result = await response.json();
+        const imageUrl = result.image_url;
 
-        setMessages(prev => [...prev, newMessage]);
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            const newMessage = {
+                to: otherClientId,
+                type: "image",
+                image_data: imageUrl,
+                from: clientId,
+                role: clientId === 'elder' ? 'elder' : 'young',
+                id: `${clientId}_${Date.now()}`
+            };
+
+            socket.send(JSON.stringify(newMessage));
+            setMessages(prev => [...prev, newMessage]);
+        }
+    } catch (error) {
+        console.error('图片上传失败:', error);
+        alert('图片上传失败，请重试');
+    } finally {
         setUploading(false);
-      }
-    };
-
-    imagePreview.onerror = (err) => {
-      console.error('图片预览加载失败:', err);
-      alert('图片加载失败，请尝试其他图片');
-      setUploading(false);
-    };
-
-    imagePreview.src = imageUrl;
+    }
   };
 
   // 文本分析

@@ -7,6 +7,11 @@ import base64
 import logging
 import imghdr
 import os
+import oss2
+from fastapi import UploadFile, File
+import uuid
+
+import os
 from typing import Dict, List
 from dotenv import load_dotenv
 from dashscope import MultiModalConversation, Generation
@@ -300,4 +305,57 @@ async def search_emojis(request: EmojiSearchRequest):
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"获取表情包失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 阿里云 OSS 配置信息，需要替换为你的实际信息
+# 加载环境变量
+load_dotenv()
+
+# 从环境变量中获取阿里云 OSS 配置信息
+aliyun_access_key_id = os.getenv("ALIYUN_ACCESS_KEY_ID")
+aliyun_access_key_secret = os.getenv("ALIYUN_ACCESS_KEY_SECRET")
+aliyun_oss_endpoint = os.getenv("ALIYUN_OSS_ENDPOINT")
+aliyun_oss_bucket_name = os.getenv("ALIYUN_OSS_BUCKET_NAME")
+
+# 检查环境变量是否存在
+if not aliyun_access_key_id or not aliyun_access_key_secret or not aliyun_oss_endpoint or not aliyun_oss_bucket_name:
+    raise ValueError("阿里云 OSS 配置信息缺失，请检查 .env 文件")
+
+# 阿里云 OSS 配置
+auth = oss2.Auth(aliyun_access_key_id, aliyun_access_key_secret)
+bucket = oss2.Bucket(auth, aliyun_oss_endpoint, aliyun_oss_bucket_name)
+
+@app.post("/api/upload_image")
+async def upload_image(image: UploadFile = File(...)):
+    try:
+        # 检查文件类型
+        logger.info(f"开始处理图片上传请求，文件名: {image.filename}")
+        if not image.content_type.startswith('image/'):
+            logger.error(f"文件类型错误，文件 {image.filename} 不是有效的图片文件")
+            raise ValueError("请上传有效的图片文件")
+
+        # 生成唯一的文件名
+        file_ext = image.filename.split('.')[-1] if '.' in image.filename else 'jpg'
+        unique_filename = f"{uuid.uuid4()}.{file_ext}"
+        logger.info(f"生成的唯一文件名: {unique_filename}")
+
+        # 读取文件内容
+        file_content = await image.read()
+        logger.info(f"成功读取文件 {image.filename}，文件大小: {len(file_content)} 字节")
+
+        # 上传到阿里云 OSS
+        logger.info(f"开始上传文件 {unique_filename} 到阿里云 OSS")
+        result = bucket.put_object(unique_filename, file_content)
+        logger.info(f"阿里云 OSS 上传响应状态码: {result.status}")
+
+        if result.status == 200:
+            # 生成图片的网络地址
+            image_url = f"https://{aliyun_oss_bucket_name}.{aliyun_oss_endpoint}/{unique_filename}"
+            return {"image_url": image_url}
+        else:
+            logger.error(f"图片 {unique_filename} 上传到 OSS 失败，状态码: {result.status}")
+            raise Exception("图片上传到 OSS 失败")
+    except Exception as e:
+        logger.error(f"处理图片上传请求时发生错误: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
