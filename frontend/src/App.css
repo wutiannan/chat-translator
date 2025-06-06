@@ -33,7 +33,7 @@ body {
 }
 
 /* 移动设备适配 */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .App {
     padding: 10px;
     height: 100vh;
@@ -48,8 +48,44 @@ body {
     max-width: 90%;
   }
   
+  /* 新增移动端输入区域布局 */
   .input-area {
+    flex-direction: column;
     padding: 8px;
+  }
+
+  /* 输入框调整 */
+  .message-input {
+    margin-right: 0;
+    margin-bottom: 8px;
+    padding-right: 10px;
+    width: 100%;
+  }
+
+  /* 按钮容器调整 */
+  .input-buttons {
+    position: static;
+    transform: none;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0;
+  }
+
+  /* 按钮样式统一 */
+  .emoji-button,
+  .file-upload-button,
+  .send-button {
+    flex: 1;
+    margin: 0 4px;
+    padding: 8px;
+    font-size: 16px;
+    min-width: 40px;
+  }
+
+  /* 确保文件上传按钮可见 */
+  .file-upload-button {
+    display: inline-flex !important;
   }
 }
 
