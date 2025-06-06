@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+const API_BASE_URL = '8.137.70.68:8000';
+
 function App() {
   // 从URL参数获取初始角色
   const urlParams = new URLSearchParams(window.location.search);
@@ -21,7 +23,7 @@ function App() {
     if (!message.trim()) return;
 
     try {
-      const response = await fetch('/api/search_emojis', {
+      const response = await fetch(`http://${API_BASE_URL}/api/search_emojis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -72,7 +74,7 @@ function App() {
 
   // WebSocket连接管理
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8000/ws/${clientId}`);
+    const ws = new WebSocket(`ws://${API_BASE_URL}/ws/${clientId}`);
     setSocket(ws);
 
     ws.onopen = () => console.log(`WebSocket connected for ${clientId}`);
@@ -139,7 +141,7 @@ function App() {
         const formData = new FormData();
         formData.append('image', file);
 
-        const response = await fetch('/api/upload_image', {
+        const response = await fetch(`http://${API_BASE_URL}/api/upload_image`, {
             method: 'POST',
             body: formData,
         });
@@ -197,7 +199,7 @@ function App() {
         .filter(m => m.id !== msg.id)
         .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
 
-      const response = await fetch('/api/analyze_text', {
+      const response = await fetch(`http://${API_BASE_URL}/api/analyze_text`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -253,7 +255,7 @@ function App() {
         .filter(m => m.id !== msg.id)
         .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
 
-      const response = await fetch('/api/analyze_emoji', {
+      const response = await fetch(`http://${API_BASE_URL}/api/analyze_emoji`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
