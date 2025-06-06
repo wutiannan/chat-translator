@@ -72,7 +72,7 @@ function App() {
 
   // WebSocket连接管理
   useEffect(() => {
-    const ws = new WebSocket(`ws://8.137.70.68:8000/ws/${clientId}`);
+    const ws = new WebSocket(`ws://localhost:8000/ws/${clientId}`);
     setSocket(ws);
 
     ws.onopen = () => console.log(`WebSocket connected for ${clientId}`);
@@ -236,69 +236,6 @@ function App() {
     }
   };
 
-  // 图片分析
-  const analyzeImageMessage = async (msg) => {
-    if (analysisInProgress) return;
-
-    setAnalysisInProgress(true);
-
-    setMessages(prev => prev.map(m =>
-      m.id === msg.id ? { ...m, analysis: { type: "pending", message: "分析中..." } } : m
-    ));
-
-    try {
-      // 获取最近5条消息作为上下文
-      const context = messages
-        .slice(-5)
-        .filter(m => m.id !== msg.id)
-        .map(m => m.message || (m.type === 'image' ? '[图片]' : ''));
-
-      const formData = new FormData();
-      formData.append('image', msg.image_blob);
-      formData.append('role', clientId === 'elder' ? 'elder' : 'young');
-      formData.append('context', JSON.stringify(context));
-
-      const response = await fetch('/api/analyze_image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        setMessages(prev => prev.map(m =>
-          m.id === msg.id ? {
-            ...m,
-            analysis: {
-              type: "analysis_result",
-              content: result.analysis
-            }
-          } : m
-        ));
-      } else {
-        throw new Error(result.message || "分析失败");
-      }
-    } catch (error) {
-      console.error('图片分析失败:', error);
-      setMessages(prev => prev.map(m =>
-        m.id === msg.id ? {
-          ...m,
-          analysis: {
-            type: "error",
-            error: error.message
-          }
-        } : m
-      ));
-    } finally {
-      setAnalysisInProgress(false);
-    }
-  };
-
   // 网络表情包分析
   const analyzeEmojiMessage = async (msg) => {
     if (analysisInProgress) return;
@@ -443,7 +380,7 @@ function App() {
                   {msg.type === "image" && (
                     <button
                       className="analysis-button"
-                      onClick={() => analyzeImageMessage(msg)}
+                      onClick={() => analyzeEmojiMessage(msg)}
                       disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
                     >
                       {msg.analysis ?

@@ -192,37 +192,6 @@ async def analyze_text_api(request: TextAnalysisRequest):
         logger.error(f"文本分析错误: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# 图片分析接口 - 增强错误处理
-@app.post("/api/analyze_image")
-async def analyze_image_api(image: UploadFile = File(...), role: str = Form(...), context: List[str] = Form(...)):
-    try:
-        logger.info(f"收到图片分析请求: {image.filename}, 大小: {image.size} 字节, 上下文长度: {len(context)}")
-        
-        # 直接使用FastAPI的UploadFile对象
-        contents = await image.read()
-        
-        # 检查文件类型
-        if not image.content_type.startswith('image/'):
-            raise ValueError("请上传有效的图片文件")
-            
-        # 检查文件大小
-        max_size = 10 * 1024 * 1024  # 10MB
-        if len(contents) > max_size:
-            raise ValueError(f"图片大小超过限制({max_size/1024/1024}MB)")
-            
-        # 修改这里：添加数据URI前缀
-        image_base64 = f"data:{image.content_type};base64," + base64.b64encode(contents).decode('utf-8')
-        
-        analyzer = ImageAnalyzer()
-        result = await analyzer.analyze_image(image_base64, role, context)
-        return {"status": "success", "analysis": result}
-    except ValueError as ve:
-        logger.error(f"图片分析参数错误: {str(ve)}")
-        raise HTTPException(status_code=400, detail=str(ve))
-    except Exception as e:
-        logger.error(f"图片分析错误: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"服务器处理图片时出错: {str(e)}")
-
 class EmojiAnalysisRequest(BaseModel):
     image_url: str
     role: str = "elder"
@@ -308,7 +277,7 @@ async def search_emojis(request: EmojiSearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# 阿里云 OSS 配置信息，需要替换为你的实际信息
+# 阿里云 OSS 配置信息
 # 加载环境变量
 load_dotenv()
 
