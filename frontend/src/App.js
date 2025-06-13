@@ -99,20 +99,37 @@ function App() {
   }, [clientId]);
 
   // 发送文本消息
+  const [pairId, setPairId] = useState(1); // 默认pair_id为1
+
+  useEffect(() => {
+      // 从URL参数获取pair_id
+      const urlParams = new URLSearchParams(window.location.search);
+      const pairIdParam = urlParams.get('pair_id');
+      if (pairIdParam && !isNaN(pairIdParam)) {
+          setPairId(parseInt(pairIdParam));
+      }
+  }, []);
+
   const sendMessage = () => {
-    if (socket && socket.readyState === WebSocket.OPEN && message.trim()) {
+      if (!message.trim()) return;
+      
       const newMessage = {
+          id: Date.now(),
+          message: message,
+          from: clientId,
         to: otherClientId,
         type: "text",
-        message: message,
-        from: clientId,
-        role: clientId, // 确保使用当前用户角色
-        id: Date.now()
+          pair_id: Number(pairId)  // 确保pair_id是数字
       };
+
+    // 通过WebSocket发送消息
+    if (socket) {
       socket.send(JSON.stringify(newMessage));
-      setMessages(prev => [...prev, newMessage]);
-      setMessage('');
     }
+    
+    // 不再使用localStorage
+    setMessages(prev => [...prev, newMessage]);
+    setMessage("");
   };
 
   // 处理图片上传

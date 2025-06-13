@@ -16,6 +16,7 @@ from typing import Dict, List
 from dotenv import load_dotenv
 from dashscope import MultiModalConversation, Generation
 import httpx  
+from db_manager import DatabaseManager
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +25,9 @@ logger = logging.getLogger(__name__)
 # 加载环境变量
 load_dotenv()
 
+# 在FastAPI应用初始化后添加
 app = FastAPI()
+db = DatabaseManager()  # 初始化数据库管理器
 
 # 跨域配置
 app.add_middleware(
@@ -158,15 +161,34 @@ class ImageAnalyzer:
             raise
 
 # WebSocket连接
+db_manager = DatabaseManager()
+
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await websocket.accept()
     active_connections[client_id] = websocket
-    logger.info(f"用户 {client_id} 已连接")
     try:
         while True:
             data = await websocket.receive_json()
-            recipient = data.get("to")
+            print(f"收到消息: {data}")
+            
+            # 保存消息到数据库
+            try:
+                db.save_message(
+                    message_id=data.get('id'),
+                    from_role=data.get('from'),
+                    to_role=data.get('to'),
+                    message_type=data.get('type'),
+                    message_content=data.get('message'),
+                    pair_id=data.get('pair_id')
+                )
+                logger.info("消息成功保存到数据库")
+            except Exception as e:
+                logger.error(f"保存消息到数据库失败: {str(e)}")
+                raise
+                
+            # 转发消息
+            recipient = data["to"]
             if recipient in active_connections:
                 await active_connections[recipient].send_json(data)
     except WebSocketDisconnect:
