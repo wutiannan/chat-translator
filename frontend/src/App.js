@@ -7,6 +7,7 @@ function App() {
   // 从URL参数获取初始角色
   const urlParams = new URLSearchParams(window.location.search);
   const initialRole = urlParams.get('role') || 'elder'; // 默认为长辈视图
+  const pairId = urlParams.get('pair_id') ;
 
   const [clientId, setClientId] = useState(initialRole);
   const [otherClientId, setOtherClientId] = useState(initialRole === 'elder' ? 'young' : 'elder');
@@ -74,6 +75,20 @@ function App() {
 
   // WebSocket连接管理
   useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const response = await fetch(`http://${API_BASE_URL}/api/get_messages?pair_id=${pairId}`);
+        if (response.ok) {
+          const history = await response.json();
+          setMessages(history);
+        }
+      } catch (error) {
+        console.error('加载历史消息失败:', error);
+      }
+    };
+    
+    loadHistory();
+
     const ws = new WebSocket(`ws://${API_BASE_URL}/ws/${clientId}`);
     setSocket(ws);
 
@@ -96,19 +111,9 @@ function App() {
     ws.onerror = (err) => console.error('WebSocket error:', err);
 
     return () => ws.close();
-  }, [clientId]);
+  }, [clientId, pairId]);
 
-  // 发送文本消息
-  const [pairId, setPairId] = useState(1); // 默认pair_id为1
 
-  useEffect(() => {
-      // 从URL参数获取pair_id
-      const urlParams = new URLSearchParams(window.location.search);
-      const pairIdParam = urlParams.get('pair_id');
-      if (pairIdParam && !isNaN(pairIdParam)) {
-          setPairId(parseInt(pairIdParam));
-      }
-  }, []);
 
   const sendMessage = () => {
       if (!message.trim()) return;

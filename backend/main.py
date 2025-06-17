@@ -242,6 +242,14 @@ async def analyze_emoji_api(request: EmojiAnalysisRequest):
         logger.error(f"表情包分析错误: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/get_messages")
+async def get_messages(pair_id: int):
+    try:
+        messages = db.get_messages(pair_id)
+        return messages
+    except Exception as e:
+        logger.error(f"获取历史消息失败: {str(e)}")
+        raise HTTPException(status_code=500, detail="获取历史消息失败")
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}

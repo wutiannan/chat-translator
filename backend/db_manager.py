@@ -72,16 +72,27 @@ class DatabaseManager:
             )""")
 
     def execute_query(self, query, params=None):
-        cursor = self.connection.cursor()
         try:
+            if not self.connection or not self.connection.is_connected():
+                self.connect()
+                
+            cursor = self.connection.cursor()
             cursor.execute(query, params or ())
+            
+            # 对于SELECT查询，返回cursor
+            if query.strip().upper().startswith('SELECT'):
+                return cursor
+                
+            # 对于非SELECT查询，提交事务并关闭cursor
             self.connection.commit()
-            return cursor
-        except Error as e:
-            print(f"执行查询错误: {e}")
-            raise
-        finally:
             cursor.close()
+            return None
+            
+        except Exception as e:
+            if 'cursor' in locals():
+                cursor.close()
+            print(f"执行查询失败: {str(e)}")
+            raise
 
     def save_message(self, message_id, from_role, to_role, message_type, message_content, pair_id):
         try:
@@ -125,13 +136,37 @@ class DatabaseManager:
             return False
 
     def get_messages(self, pair_id, limit=100):
-        query = f"""
-        SELECT * FROM chat_records_pair_{pair_id}
-        ORDER BY created_at DESC
-        LIMIT %s
-        """
-        cursor = self.execute_query(query, (limit,))
-        return cursor.fetchall()
+        try:
+            if not self.connection or not self.connection.is_connected():
+                self.connect()
+                
+            query = f"""
+            SELECT 
+                message_id as "id",
+                from_role as "from",
+                to_role as "to",
+                message_type as "type",
+                message_content as "message",
+                pair_id as "pair_id",
+                created_at as "created_at"
+            FROM chat_records_pair_{pair_id}
+            ORDER BY created_at ASC
+            LIMIT %s
+            """
+            cursor = self.execute_query(query, (limit,))
+            
+            # 将结果转换为字典列表
+            columns = [col[0] for col in cursor.description]
+            messages = []
+            for row in cursor:
+                messages.append(dict(zip(columns, row)))
+                
+            cursor.close()
+            return messages
+            
+        except Exception as e:
+            print(f"获取历史消息失败: {str(e)}")
+            return []
 
     def close(self):
         if self.connection:
