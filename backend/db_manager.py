@@ -64,7 +64,8 @@ class DatabaseManager:
                 from_role VARCHAR(10) NOT NULL,
                 to_role VARCHAR(10) NOT NULL,
                 message_type VARCHAR(10) NOT NULL,
-                message_content TEXT NOT NULL,
+                message_content TEXT,
+                image_data VARCHAR(255), 
                 pair_id INT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_message_id (message_id),
@@ -94,7 +95,7 @@ class DatabaseManager:
             print(f"执行查询失败: {str(e)}")
             raise
 
-    def save_message(self, message_id, from_role, to_role, message_type, message_content, pair_id):
+    def save_message(self, message_id, from_role, to_role, message_type, message_content, image_data, pair_id):
         try:
             # 检查数据库连接
             if not self.connection or not self.connection.is_connected():
@@ -113,7 +114,8 @@ class DatabaseManager:
                     from_role VARCHAR(10) NOT NULL,
                     to_role VARCHAR(10) NOT NULL,
                     message_type VARCHAR(10) NOT NULL,
-                    message_content TEXT NOT NULL,
+                    message_content TEXT,
+                    image_data VARCHAR(255), 
                     pair_id INT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )""")
@@ -121,10 +123,10 @@ class DatabaseManager:
             # 保存消息
             query = f"""
             INSERT INTO chat_records_pair_{pair_id} 
-            (message_id, from_role, to_role, message_type, message_content, pair_id) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            (message_id, from_role, to_role, message_type, message_content, image_data, pair_id) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            params = (message_id, from_role, to_role, message_type, message_content, pair_id)
+            params = (message_id, from_role, to_role, message_type, message_content, image_data, pair_id)
             print(f"执行SQL: {query % params}")
             self.execute_query(query, params)
             print(f"消息成功保存到chat_records_pair_{pair_id}表")

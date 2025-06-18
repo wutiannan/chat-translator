@@ -180,6 +180,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     to_role=data.get('to'),
                     message_type=data.get('type'),
                     message_content=data.get('message'),
+                    image_data=data.get('image_data'),
                     pair_id=data.get('pair_id')
                 )
                 logger.info("消息成功保存到数据库")

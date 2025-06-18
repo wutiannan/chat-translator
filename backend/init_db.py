@@ -17,7 +17,8 @@ def main():
             from_role VARCHAR(10) NOT NULL,
             to_role VARCHAR(10) NOT NULL,
             message_type VARCHAR(10) NOT NULL,
-            message_content TEXT NOT NULL,
+            message_content TEXT,  # 非必填
+            image_data VARCHAR(255),  # 非必填
             pair_id INT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_message_id (message_id),

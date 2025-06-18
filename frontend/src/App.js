@@ -53,7 +53,8 @@ function App() {
         image_data: emojiUrl,
         from: clientId,
         role: clientId,
-        id: Date.now()
+        id: Date.now(),
+        pair_id: Number(pairId)  // 确保pair_id是数字
       };
       socket.send(JSON.stringify(newMessage));
       setMessages(prev => [...prev, newMessage]);
@@ -182,8 +183,9 @@ function App() {
                 type: "image",
                 image_data: imageUrl,
                 from: clientId,
-                role: clientId === 'elder' ? 'elder' : 'young',
-                id: `${clientId}_${Date.now()}`
+                role: clientId,
+                id: Date.now(),
+                pair_id: Number(pairId)  // 确保pair_id是数字
             };
 
             socket.send(JSON.stringify(newMessage));
