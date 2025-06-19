@@ -188,9 +188,11 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 logger.error(f"保存消息到数据库失败: {str(e)}")
                 raise
                 
-            # 转发消息
+            # 转发消息 - 修改为只发送给对应pair_id的用户
             recipient = data["to"]
-            if recipient in active_connections:
+            if recipient in active_connections and \
+               (recipient.startswith(f"young_{data['pair_id']}") or \
+                recipient.startswith(f"elder_{data['pair_id']}")):
                 await active_connections[recipient].send_json(data)
     except WebSocketDisconnect:
         del active_connections[client_id]
@@ -310,7 +312,7 @@ async def search_emojis(request: EmojiSearchRequest):
 
 # 阿里云 OSS 配置信息
 # 加载环境变量
-load_dotenv()
+load_dotenv(override=True)
 
 # 从环境变量中获取阿里云 OSS 配置信息
 aliyun_access_key_id = os.getenv("ALIYUN_ACCESS_KEY_ID")

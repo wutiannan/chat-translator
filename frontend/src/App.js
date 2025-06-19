@@ -6,11 +6,13 @@ const API_BASE_URL = '8.137.70.68:8000';
 function App() {
   // 从URL参数获取初始角色
   const urlParams = new URLSearchParams(window.location.search);
-  const initialRole = urlParams.get('role') || 'elder'; // 默认为长辈视图
+  const initialRole = urlParams.get('role');
   const pairId = urlParams.get('pair_id') ;
 
-  const [clientId, setClientId] = useState(initialRole);
-  const [otherClientId, setOtherClientId] = useState(initialRole === 'elder' ? 'young' : 'elder');
+  const [clientId, setClientId] = useState(`${initialRole}_${pairId}`);
+  const [otherClientId, setOtherClientId] = useState(
+    initialRole === 'elder' ? `young_${pairId}` : `elder_${pairId}`
+  );
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
@@ -329,7 +331,7 @@ function App() {
     <div className="App">
       <h1 className="app-title">智能聊天助手</h1>
 
-      <div className="user-selector">
+      {/* <div className="user-selector">
         <label>选择用户: </label>
         <select onChange={(e) => {
           const newClientId = e.target.value;
@@ -344,14 +346,14 @@ function App() {
           <option value="elder">长辈👴</option>
           <option value="young">年轻人👱</option>
         </select>
-      </div>
+      </div> */}
 
       <div className="chat-container">
         <div className="messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message ${msg.from === clientId ? 'sent' : 'received'}`}>
               <div className="sender">
-                {msg.from === clientId ? '你' : (msg.role === 'elder' ? '长辈👴' : '年轻人👱')}
+                {msg.from === clientId ? '你' : msg.from}
               </div>
 
               {msg.type === "text" && (
