@@ -47,38 +47,28 @@ body {
   .message {
     max-width: 90%;
   }
-  
-  /* 新增移动端输入区域布局 */
+
+  /* 修改输入区域布局，让元素水平排列 */
   .input-area {
-    flex-direction: column;
+    flex-direction: row; /* 修改为水平排列 */
     padding: 8px;
+    flex-wrap: wrap;
   }
 
   /* 输入框调整 */
   .message-input {
-    margin-right: 0;
-    margin-bottom: 8px;
+    margin-right: 8px; /* 恢复右边距 */
+    margin-bottom: 0; /* 移除底部边距 */
     padding-right: 10px;
-    width: 100%;
-  }
-
-  /* 按钮容器调整 */
-  .input-buttons {
-    position: static;
-    transform: none;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0;
+    flex: 1; /* 让输入框占据剩余空间 */
   }
 
   /* 按钮样式统一 */
   .emoji-button,
   .file-upload-button,
   .send-button {
-    flex: 1;
-    margin: 0 4px;
-    padding: 8px;
+    margin: 0 4px; /* 保持按钮间距 */
+    padding: 8px; 
     font-size: 16px;
     min-width: 40px;
   }
