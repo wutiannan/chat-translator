@@ -10,7 +10,7 @@ import os
 import oss2
 from fastapi import UploadFile, File
 import uuid
-
+import asyncio
 import os
 from typing import Dict, List
 from dotenv import load_dotenv
@@ -167,46 +167,41 @@ db_manager = DatabaseManager()
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await websocket.accept()
     active_connections[client_id] = websocket
+    logger.info(f"[连接] {client_id} 连接成功，目前连接数: {len(active_connections)}")
+    logger.info(f"active_connections,{active_connections}")
     try:
         while True:
+            data = await websocket.receive_json()
+            logger.info(f"收到消息: {data}")
+
+            # 接收到心跳 ping/pong 可不处理
+            if data['type'] == "ping":
+                await websocket.send_json({"type": "pong"})
+                continue
+            
+            # 保存消息到数据库
             try:
-                # 超过 60 秒没消息就抛 TimeoutError
-                data = await asyncio.wait_for(websocket.receive_json(), timeout=60)
-                print(f"收到消息: {data}")
-
-                # 接收到心跳 ping/pong 可不处理
-                if data.get("type") == "ping":
-                    await websocket.send_json({"type": "pong"})
-                    continue
+                db.save_message(
+                    message_id=data.get('id'),
+                    from_role=data.get('from'),
+                    to_role=data.get('to'),
+                    message_type=data.get('type'),
+                    message_content=data.get('message'),
+                    image_data=data.get('image_data'),
+                    pair_id=data.get('pair_id')
+                )
+                logger.info("消息成功保存到数据库")
+            except Exception as e:
+                logger.error(f"保存消息到数据库失败: {str(e)}")
+                raise
                 
-                # 保存消息到数据库
-                try:
-                    db.save_message(
-                        message_id=data.get('id'),
-                        from_role=data.get('from'),
-                        to_role=data.get('to'),
-                        message_type=data.get('type'),
-                        message_content=data.get('message'),
-                        image_data=data.get('image_data'),
-                        pair_id=data.get('pair_id')
-                    )
-                    logger.info("消息成功保存到数据库")
-                except Exception as e:
-                    logger.error(f"保存消息到数据库失败: {str(e)}")
-                    raise
-                    
-                # 转发消息 - 修改为只发送给对应pair_id的用户
-                recipient = data["to"]
-                if recipient in active_connections and \
-                (recipient.startswith(f"young_{data['pair_id']}") or \
-                    recipient.startswith(f"elder_{data['pair_id']}")):
-                    await active_connections[recipient].send_json(data)
-            except asyncio.TimeoutError:
-                logger.warning(f"{client_id} 心跳超时，断开连接")
-                break
-
-            
-            
+            # 转发消息 - 修改为只发送给对应pair_id的用户
+            recipient = data["to"]
+            logger.info(f"active_connections,{active_connections}")
+            if recipient in active_connections and \
+            (recipient.startswith(f"young_{data['pair_id']}") or \
+                recipient.startswith(f"elder_{data['pair_id']}")):
+                await active_connections[recipient].send_json(data)
     except WebSocketDisconnect:
         del active_connections[client_id]
         logger.info(f"用户 {client_id} 已断开")
