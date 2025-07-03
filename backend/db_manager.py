@@ -150,7 +150,8 @@ class DatabaseManager:
                 message_type as "type",
                 message_content as "message",
                 pair_id as "pair_id",
-                created_at as "created_at"
+                created_at as "created_at",
+                image_data as "image_data"
             FROM chat_records_pair_{pair_id}
             ORDER BY created_at ASC
             LIMIT %s

@@ -26,6 +26,9 @@ function App() {
   const [emojiPackages, setEmojiPackages] = useState([]); // 新增：存储表情包
   const [showEmojiPanel, setShowEmojiPanel] = useState(false); // 新增：控制表情面板显示
 
+
+  const heartbeatTimerRef = useRef()
+
   // 新增：获取表情包函数
   const fetchEmojiPackages = async () => {
     if (!message.trim()) return;
@@ -109,6 +112,23 @@ function App() {
       return;
     }
 
+    // 心跳时间
+    const heartbeatInterval = 3000
+
+    const startHeartbeat=(socket)=> {
+      stopHeartbeat();
+      heartbeatTimerRef.current = setInterval(() => {
+        socket.send(JSON.stringify({ type: 'ping' }));
+      }, heartbeatInterval);
+    }
+
+    const stopHeartbeat=()=> {
+    if (heartbeatTimerRef.current) {
+      clearInterval(heartbeatTimerRef.current);
+      heartbeatTimerRef.current = null;
+    }
+  }
+
     const connectWebSocket = () => {
       const ws = new WebSocket(`ws://${API_BASE_URL}/ws/${clientId}`);
       setSocket(ws);
@@ -116,10 +136,18 @@ function App() {
       ws.onopen = () => {
         console.log(`WebSocket connected for ${clientId}`);
         setIsWebSocketReady(true);
+        // 开始心跳
+        startHeartbeat(ws)
       };
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
+
+          if (data.type === "pong") {
+            // console.log("❤️ 心跳响应");
+            return;
+          }
+
           if (!data.id) {
             data.id = `${data.from || 'unknown'}_${Date.now()}`;
           }
