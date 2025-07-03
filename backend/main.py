@@ -10,7 +10,7 @@ import os
 import oss2
 from fastapi import UploadFile, File
 import uuid
-
+import asyncio
 import os
 from typing import Dict, List
 from dotenv import load_dotenv
@@ -167,10 +167,17 @@ db_manager = DatabaseManager()
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await websocket.accept()
     active_connections[client_id] = websocket
+    logger.info(f"[连接] {client_id} 连接成功，目前连接数: {len(active_connections)}")
+    logger.info(f"active_connections,{active_connections}")
     try:
         while True:
             data = await websocket.receive_json()
-            print(f"收到消息: {data}")
+            logger.info(f"收到消息: {data}")
+
+            # 接收到心跳 ping/pong 可不处理
+            if data['type'] == "ping":
+                await websocket.send_json({"type": "pong"})
+                continue
             
             # 保存消息到数据库
             try:
@@ -190,8 +197,9 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 
             # 转发消息 - 修改为只发送给对应pair_id的用户
             recipient = data["to"]
+            logger.info(f"active_connections,{active_connections}")
             if recipient in active_connections and \
-               (recipient.startswith(f"young_{data['pair_id']}") or \
+            (recipient.startswith(f"young_{data['pair_id']}") or \
                 recipient.startswith(f"elder_{data['pair_id']}")):
                 await active_connections[recipient].send_json(data)
     except WebSocketDisconnect:
