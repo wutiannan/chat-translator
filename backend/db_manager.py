@@ -137,7 +137,7 @@ class DatabaseManager:
             traceback.print_exc()
             return False
 
-    def get_messages(self, pair_id, limit=100):
+    def get_messages(self, pair_id, limit=500):
         try:
             if not self.connection or not self.connection.is_connected():
                 self.connect()
