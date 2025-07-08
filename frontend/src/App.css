@@ -69,7 +69,7 @@ body {
   .send-button {
     margin: 0 4px; /* 保持按钮间距 */
     padding: 8px; 
-    font-size: 16px;
+    /* font-size: 16px; */
     min-width: 40px;
   }
 
@@ -174,7 +174,7 @@ body {
 /* 消息内容 */
 .content {
   word-wrap: break-word;
-  font-size: 16px;
+  /* font-size: 16px; */
 }
 
 /* 分析按钮 */
@@ -214,7 +214,7 @@ body {
   border: none;
   border-radius: 20px;
   background-color: white;
-  font-size: 16px;
+  /* font-size: 16px; */
   margin-right: 8px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
   outline: none;
@@ -236,7 +236,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 20px;
+  /* font-size: 20px; */
   margin-left: 5px;
 }
 
@@ -248,7 +248,7 @@ body {
   border: none;
   border-radius: 20px;
   cursor: pointer;
-  font-size: 16px;
+  /* font-size: 16px; */
   font-weight: 500;
   transition: all 0.2s;
 }

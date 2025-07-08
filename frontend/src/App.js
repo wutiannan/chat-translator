@@ -10,6 +10,14 @@ function App() {
   const initialRole = urlParams.get('role');
   const pairId = urlParams.get('pair_id');
 
+  const elderStyle = {
+    fontSize: initialRole === 'elder' ? '24px' : '16px',
+    iconSize: initialRole === 'elder' ? '24px' : '16px',
+    smallFontSize: initialRole === 'elder' ? '16px' : '12px',
+    buttonPadding: initialRole === 'elder' ? '12px 24px' : '8px 16px'
+  };
+
+
   const [clientId, setClientId] = useState(`${initialRole}_${pairId}`);
   const [otherClientId, setOtherClientId] = useState(
     initialRole === 'elder' ? `young_${pairId}` : `elder_${pairId}`
@@ -115,19 +123,19 @@ function App() {
     // 心跳时间
     const heartbeatInterval = 3000
 
-    const startHeartbeat=(socket)=> {
+    const startHeartbeat = (socket) => {
       stopHeartbeat();
       heartbeatTimerRef.current = setInterval(() => {
         socket.send(JSON.stringify({ type: 'ping' }));
       }, heartbeatInterval);
     }
 
-    const stopHeartbeat=()=> {
-    if (heartbeatTimerRef.current) {
-      clearInterval(heartbeatTimerRef.current);
-      heartbeatTimerRef.current = null;
+    const stopHeartbeat = () => {
+      if (heartbeatTimerRef.current) {
+        clearInterval(heartbeatTimerRef.current);
+        heartbeatTimerRef.current = null;
+      }
     }
-  }
 
     const connectWebSocket = () => {
       const ws = new WebSocket(`ws://${API_BASE_URL}/ws/${clientId}`);
@@ -415,7 +423,7 @@ function App() {
     <>
       {!isWebSocketReady && <LoadingPage />}
       {isWebSocketReady && (
-        <div className="App">
+        <div className="App" style={{ fontSize: elderStyle.fontSize }}>
           <h1 className="app-title">智能聊天助手</h1>
 
           {/* <div className="user-selector">
@@ -439,7 +447,7 @@ function App() {
             <div className="messages">
               {messages.map((msg) => (
                 <div key={msg.id} className={`message ${msg.from === clientId ? 'sent' : 'received'}`}>
-                  <div className="sender">
+                  <div className="sender"     style={{ fontSize: elderStyle.smallFontSize }}>
                     {msg.from === clientId ? '你' : msg.from}
                   </div>
 
@@ -484,6 +492,7 @@ function App() {
                           className="analysis-button"
                           onClick={() => analyzeTextMessage(msg)}
                           disabled={msg.analysis && msg.analysis.type === "pending"}
+                          style={{ fontSize: elderStyle.smallFontSize }}
                         >
                           {msg.analysis ?
                             (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
@@ -520,7 +529,7 @@ function App() {
                   )}
 
                   {msg.from !== clientId && msg.analysis && (
-                    <div className="analysis-result">
+                    <div className="analysis-result"     style={{ fontSize: elderStyle.smallFontSize }}>
                       <div className="analysis-header">
                         <span className="analysis-title">分析结果：</span>
                       </div>
@@ -555,13 +564,18 @@ function App() {
                 }}
                 placeholder="输入消息..."
                 className="message-input"
+                style={{ fontSize: elderStyle.fontSize }}
               />
-              <button onClick={sendMessage} className="send-button">
+              <button onClick={sendMessage} className="send-button" style={{
+                fontSize: elderStyle.fontSize,
+                padding: elderStyle.buttonPadding
+              }}>
                 发送
               </button>
               <button
                 onClick={fetchEmojiPackages}
                 className="emoji-button"
+                style={{ fontSize: elderStyle.iconSize }}
                 disabled={!message.trim()}
               >
                 🔍
