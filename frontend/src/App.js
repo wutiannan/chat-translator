@@ -16,6 +16,23 @@ function App() {
     smallFontSize: initialRole === 'elder' ? '16px' : '12px',
     buttonPadding: initialRole === 'elder' ? '12px 24px' : '8px 16px'
   };
+  const formatTime = (timestamp) => {
+    const now = new Date();
+    const msgDate = new Date(timestamp);
+
+    // 如果是今天
+    if (msgDate.toDateString() === now.toDateString()) {
+      return `${msgDate.getHours()}:${msgDate.getMinutes().toString().padStart(2, '0')}`;
+    }
+    // 如果是昨天
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (msgDate.toDateString() === yesterday.toDateString()) {
+      return '昨天';
+    }
+    // 其他情况显示完整日期
+    return `${msgDate.getMonth() + 1}月${msgDate.getDate()}日`;
+  };
 
 
   const [clientId, setClientId] = useState(`${initialRole}_${pairId}`);
@@ -447,105 +464,119 @@ function App() {
             <div className="messages">
               {messages.map((msg) => (
                 <div key={msg.id} className={`message ${msg.from === clientId ? 'sent' : 'received'}`}>
-                  <div className="sender"     style={{ fontSize: elderStyle.smallFontSize }}>
+                  <div className="sender" style={{ fontSize: elderStyle.smallFontSize }}>
                     {msg.from === clientId ? '你' : msg.from}
                   </div>
 
-                  {msg.type === "text" && (
-                    <div className="content text-content">{msg.message}</div>
-                  )}
+                  {
+                    msg.type === "text" && (
+                      <div className="content text-content">{msg.message}</div>
+                    )
+                  }
 
-                  {msg.type === "image" && (
-                    <div className="content image-content">
-                      {uploading && msg.id === Date.now() && <div className="uploading">上传中...</div>}
-                      <img
-                        src={msg.image_data}
-                        alt="发送的图片"
-                        style={{
-                          maxWidth: '200px',
-                          maxHeight: '200px',
-                          objectFit: 'contain'
-                        }}
-                      />
-                    </div>
-                  )}
 
-                  {msg.type === "emoji" && (
-                    <div className="content image-content">
-                      <img
-                        src={msg.image_data}
-                        alt="网络表情包"
-                        style={{
-                          maxWidth: '200px',
-                          maxHeight: '200px',
-                          objectFit: 'contain'
-                        }}
-                      />
-                    </div>
-                  )}
 
-                  {/* 只对接收的消息显示分析按钮 */}
-                  {msg.from !== clientId && (
-                    <div className="analysis-buttons">
-                      {msg.type === "text" && (
-                        <button
-                          className="analysis-button"
-                          onClick={() => analyzeTextMessage(msg)}
-                          disabled={msg.analysis && msg.analysis.type === "pending"}
-                          style={{ fontSize: elderStyle.smallFontSize }}
-                        >
-                          {msg.analysis ?
-                            (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
-                            '📝分析文本'
-                          }
-                        </button>
-                      )}
-
-                      {msg.type === "image" && (
-                        <button
-                          className="analysis-button"
-                          onClick={() => analyzeEmojiMessage(msg)}
-                          disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
-                        >
-                          {msg.analysis ?
-                            (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
-                            '📷分析图片'
-                          }
-                        </button>
-                      )}
-                      {msg.type === "emoji" && (
-                        <button
-                          className="analysis-button"
-                          onClick={() => analyzeEmojiMessage(msg)}
-                          disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
-                        >
-                          {msg.analysis ?
-                            (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
-                            '🙂分析表情包'
-                          }
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {msg.from !== clientId && msg.analysis && (
-                    <div className="analysis-result"     style={{ fontSize: elderStyle.smallFontSize }}>
-                      <div className="analysis-header">
-                        <span className="analysis-title">分析结果：</span>
+                  {
+                    msg.type === "image" && (
+                      <div className="content image-content">
+                        {uploading && msg.id === Date.now() && <div className="uploading">上传中...</div>}
+                        <img
+                          src={msg.image_data}
+                          alt="发送的图片"
+                          style={{
+                            maxWidth: '200px',
+                            maxHeight: '200px',
+                            objectFit: 'contain'
+                          }}
+                        />
                       </div>
-                      <div className="analysis-content">
-                        {msg.analysis.type === "pending" ? (
-                          <span className="analysis-pending">{msg.analysis.message}</span>
-                        ) : msg.analysis.type === "error" ? (
-                          <span className="analysis-error">分析失败：{msg.analysis.error}</span>
-                        ) : (
-                          <div className="analysis-text" style={{ whiteSpace: 'pre-wrap' }}>
-                            {msg.analysis.content}
-                          </div>
+                    )
+                  }
+
+                  {
+                    msg.type === "emoji" && (
+                      <div className="content image-content">
+                        <img
+                          src={msg.image_data}
+                          alt="网络表情包"
+                          style={{
+                            maxWidth: '200px',
+                            maxHeight: '200px',
+                            objectFit: 'contain'
+                          }}
+                        />
+                      </div>
+                    )
+                  }
+                  <div className="sender" style={{ fontSize: elderStyle.smallFontSize }}>
+                    {formatTime(msg.created_at)}
+                  </div>
+                  {/* 只对接收的消息显示分析按钮 */}
+                  {
+                    msg.from !== clientId && (
+                      <div className="analysis-buttons">
+                        {msg.type === "text" && (
+                          <button
+                            className="analysis-button"
+                            onClick={() => analyzeTextMessage(msg)}
+                            disabled={msg.analysis && msg.analysis.type === "pending"}
+                            style={{ fontSize: elderStyle.smallFontSize }}
+                          >
+                            {msg.analysis ?
+                              (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
+                              '📝分析文本'
+                            }
+                          </button>
+                        )}
+
+                        {msg.type === "image" && (
+                          <button
+                            className="analysis-button"
+                            onClick={() => analyzeEmojiMessage(msg)}
+                            disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
+                          >
+                            {msg.analysis ?
+                              (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
+                              '📷分析图片'
+                            }
+                          </button>
+                        )}
+                        {msg.type === "emoji" && (
+                          <button
+                            className="analysis-button"
+                            onClick={() => analyzeEmojiMessage(msg)}
+                            disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
+                          >
+                            {msg.analysis ?
+                              (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
+                              '🙂分析表情包'
+                            }
+                          </button>
                         )}
                       </div>
-                    </div>
-                  )}
+                    )
+                  }
+
+                  {
+                    msg.from !== clientId && msg.analysis && (
+                      <div className="analysis-result" style={{ fontSize: elderStyle.smallFontSize }}>
+                        <div className="analysis-header">
+                          <span className="analysis-title">分析结果：</span>
+                        </div>
+                        <div className="analysis-content">
+                          {msg.analysis.type === "pending" ? (
+                            <span className="analysis-pending">{msg.analysis.message}</span>
+                          ) : msg.analysis.type === "error" ? (
+                            <span className="analysis-error">分析失败：{msg.analysis.error}</span>
+                          ) : (
+                            <div className="analysis-text" style={{ whiteSpace: 'pre-wrap' }}>
+                              {msg.analysis.content}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  }
                 </div>
               ))}
               <div ref={messagesEndRef} /> {/* 在消息列表末尾添加引用元素 */}
@@ -606,8 +637,9 @@ function App() {
               )}
             </div>
           </div>
-        </div>
-      )}
+        </div >
+      )
+      }
     </>
   );
 }
