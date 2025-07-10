@@ -50,6 +50,8 @@ function App() {
   const [analysisInProgress, setAnalysisInProgress] = useState(false);
   const [emojiPackages, setEmojiPackages] = useState([]); // 新增：存储表情包
   const [showEmojiPanel, setShowEmojiPanel] = useState(false); // 新增：控制表情面板显示
+  const [emojiTags, setEmojiTags] = useState([]);
+  const [showTagPanel, setShowTagPanel] = useState(false);
 
 
   const heartbeatTimerRef = useRef()
@@ -94,9 +96,31 @@ function App() {
       socket.send(JSON.stringify(newMessage));
       setMessages(prev => [...prev, newMessage]);
       setShowEmojiPanel(false);
+      setShowTagPanel(false);
     }
   };
+  const generateEmojiTags = async () => {
+    try {
+      const response = await fetch(`http://${API_BASE_URL}/api/generate_tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `text=${encodeURIComponent(message)}`
+      });
 
+      if (response.ok) {
+        const data = await response.json();
+        setEmojiTags(data.tags);
+        setShowTagPanel(true);
+      }
+    } catch (error) {
+      console.error('生成表情标签失败:', error);
+    }
+  };
+  const handleSearchClick = () => {
+    if (message.trim()) {
+      generateEmojiTags();
+    }
+  };
   // 移除从localStorage加载消息历史的逻辑
   // useEffect(() => {
   //   const storedMessages = localStorage.getItem('messages');
@@ -604,7 +628,7 @@ function App() {
                 发送
               </button>
               <button
-                onClick={fetchEmojiPackages}
+                onClick={handleSearchClick}
                 className="emoji-button"
                 style={{ fontSize: elderStyle.iconSize }}
                 disabled={!message.trim()}
@@ -621,7 +645,22 @@ function App() {
               <label htmlFor="fileInput" className="file-upload-button">
                 📷
               </label>
-
+              {showTagPanel && (
+                <div className="emoji-panel">
+                  {emojiTags.map((tag, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        fetchEmojiPackages(tag);
+                        // setShowTagPanel(false);
+                      }}
+                      style={{ fontSize: elderStyle.smallFontSize }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
               {showEmojiPanel && (
                 <div className="emoji-panel">
                   {emojiPackages.map((emoji, index) => (

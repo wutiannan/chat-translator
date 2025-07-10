@@ -369,3 +369,55 @@ async def upload_image(image: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"处理图片上传请求时发生错误: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+class EmojiTagGenerator:
+    def __init__(self):
+        self.api_key = os.getenv("DASHSCOPE_API_KEY")
+        self.model = "qwen-max"
+    
+    async def generate_tags(self, text: str) -> List[str]:
+        try:
+            prompt = f"""根据以下聊天内容生成5个表情包搜索关键词:
+            
+            聊天内容:
+            {text}
+            
+            要求:
+            1. 每个关键词2-4个汉字
+            2. 用逗号分隔关键词
+            3. 只返回关键词，不要其他内容"""
+            
+            response = Generation.call(
+                model=self.model,
+                prompt=prompt,
+                api_key=self.api_key
+            )
+            
+            if response.status_code == 200:
+                return [tag.strip() for tag in response.output.text.split(",") if tag.strip()]
+            else:
+                logger.error(f"表情标签生成API错误: {response.message}")
+                raise ValueError(f"表情标签生成失败: {response.message}")
+                
+        except Exception as e:
+            logger.error(f"调用表情标签生成模型出错: {str(e)}")
+            raise
+
+@app.post("/api/generate_tags")
+async def generate_tags_api(text: str = Form(...)):
+    try:
+        if not text.strip():
+            raise ValueError("文本内容不能为空")
+            
+        logger.info(f"收到表情标签生成请求: {text[:30]}...")
+        generator = EmojiTagGenerator()
+        tags = await generator.generate_tags(text)
+        return {"status": "success", "tags": tags}
+    except ValueError as ve:
+        logger.error(f"表情标签生成参数错误: {str(ve)}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"表情标签生成错误: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
