@@ -263,7 +263,8 @@ function App() {
       from: clientId,
       to: otherClientId,
       type: "text",
-      pair_id: Number(pairId)  // 确保pair_id是数字
+      pair_id: Number(pairId),
+      created_at: new Date().toISOString()
     };
 
     // 通过WebSocket发送消息
@@ -323,7 +324,7 @@ function App() {
           from: clientId,
           role: clientId,
           id: Date.now(),
-          pair_id: Number(pairId)  // 确保pair_id是数字
+          pair_id: Number(pairId)
         };
 
         socket.send(JSON.stringify(newMessage));
@@ -667,31 +668,31 @@ function App() {
                           style={{ fontSize: elderStyle.smallFontSize }}
                           className={tag === activeTag ? 'active' : ''}
                         >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {showEmojiPanel && (
-                <div className='emoji-grid'>
-                  {emojiPackages.map((emoji, index) => (
-                    <img
-                      key={index}
-                      src={emoji}
-                      alt="表情包"
-                      onClick={() => sendEmoji(emoji)}
-                      className="emoji-item"
-                    />
-                  ))}
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showEmojiPanel && (
+                    <div className='emoji-grid'>
+                      {emojiPackages.map((emoji, index) => (
+                        <img
+                          key={index}
+                          src={emoji}
+                          alt="表情包"
+                          onClick={() => sendEmoji(emoji)}
+                          className="emoji-item"
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-              )}
           </div>
-        </div>
         </div >
       )
-}
+      }
     </>
   );
 }
