@@ -120,6 +120,10 @@ function App() {
     }
   };
   const handleSearchClick = () => {
+    if (showEmojiPanel) {
+      setShowEmojiPanel(false);
+      return;
+    }
     if (message.trim()) {
       generateEmojiTags();
       fetchEmojiPackages(message);
