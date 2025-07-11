@@ -52,20 +52,22 @@ function App() {
   const [showEmojiPanel, setShowEmojiPanel] = useState(false); // 新增：控制表情面板显示
   const [emojiTags, setEmojiTags] = useState([]);
   const [showTagPanel, setShowTagPanel] = useState(false);
+  const [activeTag, setActiveTag] = useState('');
 
 
   const heartbeatTimerRef = useRef()
 
   // 新增：获取表情包函数
-  const fetchEmojiPackages = async () => {
-    if (!message.trim()) return;
+  const fetchEmojiPackages = async (tag) => {
+    if (!tag.trim()) return;
+    setActiveTag(tag);
 
     try {
       const response = await fetch(`http://${API_BASE_URL}/api/search_emojis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: message,
+          text: tag,
           limit: 5
         })
       });
@@ -109,7 +111,8 @@ function App() {
 
       if (response.ok) {
         const data = await response.json();
-        setEmojiTags(data.tags);
+        setEmojiTags(["😊", ...data.tags]);
+        setShowEmojiPanel(true);
         setShowTagPanel(true);
       }
     } catch (error) {
@@ -119,6 +122,7 @@ function App() {
   const handleSearchClick = () => {
     if (message.trim()) {
       generateEmojiTags();
+      fetchEmojiPackages(message);
     }
   };
   // 移除从localStorage加载消息历史的逻辑
@@ -645,24 +649,27 @@ function App() {
               <label htmlFor="fileInput" className="file-upload-button">
                 📷
               </label>
-              {showTagPanel && (
+              {showEmojiPanel && (
                 <div className="emoji-panel">
-                  {emojiTags.map((tag, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        fetchEmojiPackages(tag);
-                        // setShowTagPanel(false);
-                      }}
-                      style={{ fontSize: elderStyle.smallFontSize }}
-                    >
+                  {showTagPanel && (
+                    <div className="emoji-tabs">
+                      {emojiTags.map((tag, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            fetchEmojiPackages(tag);
+                            // setShowTagPanel(false);
+                          }}
+                          style={{ fontSize: elderStyle.smallFontSize }}
+                          className={tag === activeTag ? 'active' : ''}
+                        >
                       {tag}
                     </button>
                   ))}
                 </div>
               )}
               {showEmojiPanel && (
-                <div className="emoji-panel">
+                <div className='emoji-grid'>
                   {emojiPackages.map((emoji, index) => (
                     <img
                       key={index}
@@ -675,10 +682,12 @@ function App() {
                 </div>
               )}
             </div>
+              )}
           </div>
+        </div>
         </div >
       )
-      }
+}
     </>
   );
 }

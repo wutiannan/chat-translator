@@ -377,15 +377,17 @@ class EmojiTagGenerator:
     
     async def generate_tags(self, text: str) -> List[str]:
         try:
-            prompt = f"""根据以下聊天内容生成5个表情包搜索关键词:
+            prompt = f"""根据以下词汇生成5个相关的表情包搜索关键词:
             
-            聊天内容:
+            词汇:
             {text}
             
             要求:
-            1. 每个关键词2-4个汉字
+            1. 每个关键词2-4个汉字，不能超过4个汉字
             2. 用逗号分隔关键词
-            3. 只返回关键词，不要其他内容"""
+            3. 根据词汇在互联网的含义进行搜索，结合当前流行热词
+            4. 关键词要与词汇相关  
+            5. 只返回关键词，不要其他内容"""
             
             response = Generation.call(
                 model=self.model,

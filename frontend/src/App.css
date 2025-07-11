@@ -18,7 +18,7 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .chat-container {
@@ -29,7 +29,7 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 180px); 
+  max-height: calc(100vh - 180px);
 }
 
 /* 移动设备适配 */
@@ -38,37 +38,42 @@ body {
     padding: 10px;
     height: 100vh;
   }
-  
+
   .chat-container {
     max-height: calc(100vh - 150px);
     border-radius: 12px;
   }
-  
+
   .message {
     max-width: 90%;
   }
 
   /* 修改输入区域布局，让元素水平排列 */
   .input-area {
-    flex-direction: row; /* 修改为水平排列 */
+    flex-direction: row;
+    /* 修改为水平排列 */
     padding: 8px;
     flex-wrap: wrap;
   }
 
   /* 输入框调整 */
   .message-input {
-    margin-right: 8px; /* 恢复右边距 */
-    margin-bottom: 0; /* 移除底部边距 */
+    margin-right: 8px;
+    /* 恢复右边距 */
+    margin-bottom: 0;
+    /* 移除底部边距 */
     padding-right: 10px;
-    flex: 1; /* 让输入框占据剩余空间 */
+    flex: 1;
+    /* 让输入框占据剩余空间 */
   }
 
   /* 按钮样式统一 */
   .emoji-button,
   .file-upload-button,
   .send-button {
-    margin: 0 4px; /* 保持按钮间距 */
-    padding: 8px; 
+    margin: 0 4px;
+    /* 保持按钮间距 */
+    padding: 8px;
     /* font-size: 16px; */
     min-width: 40px;
   }
@@ -204,7 +209,8 @@ body {
   padding: 10px;
   background-color: #F7F7F7;
   border-top: 1px solid #E5E5EA;
-  position: relative; /* 添加相对定位 */
+  position: relative;
+  /* 添加相对定位 */
 }
 
 /* 消息输入框 */
@@ -218,7 +224,8 @@ body {
   margin-right: 8px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
   outline: none;
-  padding-right: 120px; /* 为右侧按钮留出空间 */
+  padding-right: 120px;
+  /* 为右侧按钮留出空间 */
 }
 
 /* 按钮容器 */
@@ -277,7 +284,8 @@ body {
 
 .file-upload-button:hover {
   background-color: #D1D1D6;
-}    
+}
+
 /* 保持原有内容不变，增加以下内容 */
 
 .analysis-result {
@@ -313,7 +321,7 @@ body {
 
 .image-content img {
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
@@ -334,35 +342,7 @@ body {
 
 
 .emoji-panel {
-    position: absolute;
-    bottom: 60px;
-    right: 10px;
-    background: white;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 100;
-}
-
-.emoji-item {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-    cursor: pointer;
-    transition: transform 0.2s;
-    border-radius: 4px;
-}
-
-.emoji-item:hover {
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-.tag-panel {
+  height: 130px;
   position: absolute;
   bottom: 60px;
   left: 0;
@@ -370,49 +350,81 @@ body {
   background: white;
   padding: 10px;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 100;
 }
 
-.tag-panel button {
-  margin: 5px;
-  padding: 5px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #f5f5f5;
-  cursor: pointer;
-}
-.combined-panel {
-  position: absolute;
-  bottom: 60px;
-  left: 0;
-  right: 0;
-  background: white;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  z-index: 100;
-  max-height: 300px;
-  overflow-y: auto;
-}
+/* display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 8px;
+max-height: 300px;
+overflow-y: auto; */
 
-.tag-section, .emoji-section {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
 
-.tag-section button, .emoji-section button {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #f5f5f5;
-  cursor: pointer;
-}
+
+
+
 
 .emoji-section img {
   width: 50px;
   height: 50px;
   cursor: pointer;
   object-fit: contain;
+}
+
+.emoji-panel {
+  position: absolute;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  background: #f5f5f5;
+  border-top: 1px solid #e5e5e5;
+  padding: 5px 0 0 0;
+  z-index: 100;
+}
+
+.emoji-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e5e5;
+  padding: 0 10px;
+}
+
+.emoji-tabs button {
+  flex: 1;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  color: #666;
+}
+
+.emoji-tabs button.active {
+  border-bottom-color: #07C160;
+  color: #07C160;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+  padding: 10px;
+  height: calc(100% - 40px);
+  overflow-y: auto;
+}
+
+.emoji-item {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.emoji-item:hover {
+  background: #e5e5e5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
