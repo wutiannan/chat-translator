@@ -616,34 +616,38 @@ function App() {
             </div>
 
             <div className="input-area">
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                placeholder="输入消息..."
-                className="message-input"
-                style={{ fontSize: elderStyle.fontSize }}
-              />
+              <div className="message-input">
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="输入消息..."
+                  className="input-field"
+                  style={{ fontSize: elderStyle.fontSize }}
+                />
+                <button
+                  onClick={handleSearchClick}
+                  className="emoji-button"
+                  style={{ fontSize: elderStyle.iconSize }}
+                  disabled={!message.trim()}
+                >
+                  🔍
+                </button>
+              </div>
+
               <button onClick={sendMessage} className="send-button" style={{
                 fontSize: elderStyle.fontSize,
                 padding: elderStyle.buttonPadding
               }}>
                 发送
               </button>
-              <button
-                onClick={handleSearchClick}
-                className="emoji-button"
-                style={{ fontSize: elderStyle.iconSize }}
-                disabled={!message.trim()}
-              >
-                🔍
-              </button>
+
               <input
                 type="file"
                 accept="image/*"
