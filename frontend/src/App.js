@@ -93,7 +93,8 @@ function App() {
         from: clientId,
         role: clientId,
         id: Date.now(),
-        pair_id: Number(pairId)  // 确保pair_id是数字
+        pair_id: Number(pairId),
+        created_at: new Date().toISOString()
       };
       socket.send(JSON.stringify(newMessage));
       setMessages(prev => [...prev, newMessage]);
@@ -324,7 +325,8 @@ function App() {
           from: clientId,
           role: clientId,
           id: Date.now(),
-          pair_id: Number(pairId)
+          pair_id: Number(pairId),
+          created_at: new Date().toISOString()
         };
 
         socket.send(JSON.stringify(newMessage));
