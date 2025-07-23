@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "HeartTranslator",
+  "name": "Heart Translator APP",
   "icons": [
     {
       "src": "favicon.ico",

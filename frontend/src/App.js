@@ -13,8 +13,9 @@ function App() {
   const elderStyle = {
     fontSize: initialRole === 'elder' ? '24px' : '16px',
     iconSize: initialRole === 'elder' ? '24px' : '16px',
+    iconFontSize: initialRole === 'elder' ? '18px' : '16px',
     smallFontSize: initialRole === 'elder' ? '16px' : '12px',
-    buttonPadding: initialRole === 'elder' ? '12px 24px' : '8px 16px'
+    buttonPadding: initialRole === 'elder' ? '10px 12px' : '8px 12px'
   };
   const formatTime = (timestamp) => {
     const now = new Date();
@@ -634,7 +635,7 @@ function App() {
                   }}
                   placeholder="输入消息..."
                   className="input-field"
-                  style={{ fontSize: elderStyle.fontSize }}
+                  style={{ fontSize: elderStyle.iconFontSize }}
                 />
                 <button
                   onClick={handleSearchClick}
@@ -647,7 +648,7 @@ function App() {
               </div>
 
               <button onClick={sendMessage} className="send-button" style={{
-                fontSize: elderStyle.fontSize,
+                fontSize: elderStyle.iconFontSize,
                 padding: elderStyle.buttonPadding
               }}>
                 发送
