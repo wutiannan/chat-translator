@@ -570,6 +570,7 @@ function App() {
                             className="analysis-button"
                             onClick={() => analyzeEmojiMessage(msg)}
                             disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
+                            style={{ fontSize: elderStyle.smallFontSize }}
                           >
                             {msg.analysis ?
                               (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
@@ -582,6 +583,7 @@ function App() {
                             className="analysis-button"
                             onClick={() => analyzeEmojiMessage(msg)}
                             disabled={analysisInProgress}  // 修改为只检查analysisInProgress状态
+                            style={{ fontSize: elderStyle.smallFontSize }}
                           >
                             {msg.analysis ?
                               (msg.analysis.type === "pending" ? '分析中...' : '🔄重新分析') :
