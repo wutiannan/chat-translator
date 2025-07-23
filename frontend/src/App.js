@@ -67,7 +67,7 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: tag,
+          text: tag === "😊" ? message : tag,
           limit: 5
         })
       });
@@ -128,6 +128,7 @@ function App() {
     if (message.trim()) {
       generateEmojiTags();
       fetchEmojiPackages(message);
+      setActiveTag("😊");
     }
   };
   // 移除从localStorage加载消息历史的逻辑
